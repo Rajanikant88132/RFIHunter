@@ -1,0 +1,35 @@
+/* RFI Hunter — global styles */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: -apple-system, "Segoe UI", system-ui, sans-serif;
+  font-size: 14px;
+  line-height: 1.5;
+  background: #f4f5f7;
+  color: #1f2328;
+}
+
+a { color: #2563eb; text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+button { cursor: pointer; }
+
+input, select {
+  font-family: inherit;
+  font-size: 13px;
+}
+
+.badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: .3px;
+  text-transform: uppercase;
+}
+.badge-rfi  { background: #dbeafe; color: #1d4ed8; }
+.badge-rfp  { background: #ede9fe; color: #5b21b6; }
+.badge-open { background: #d1fae5; color: #065f46; }
+.badge-closed { background: #fee2e2; color: #991b1b; }
+.badge-other  { background: #f3f4f6; color: #374151; }

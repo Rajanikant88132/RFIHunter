@@ -1,0 +1,86 @@
+services:
+
+  # ── MySQL ────────────────────────────────────────────────────────────
+  db:
+    image: mysql:8.0
+    container_name: rfihunter-db
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: root_secret
+      MYSQL_DATABASE:      rfihunter
+      MYSQL_USER:          rfihunter
+      MYSQL_PASSWORD:      rfihunter_pass
+    volumes:
+      - db_data:/var/lib/mysql
+      - ./db/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
+    ports:
+      - "3306:3306"
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "rfihunter", "-prfihunter_pass"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  # ── Python Scraper ────────────────────────────────────────────────────
+  scraper:
+    build:
+      context: ./scraper
+      dockerfile: Dockerfile
+    container_name: rfihunter-scraper
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - ./db/schema.sql:/app/db/schema.sql:ro
+    environment:
+      DB_HOST: db
+      DB_PORT: 3306
+      DB_NAME: rfihunter
+      DB_USER: rfihunter
+      DB_PASS: rfihunter_pass
+      SCRAPE_INTERVAL_HOURS: 6
+      LOG_LEVEL: INFO
+
+  # ── Node.js API ───────────────────────────────────────────────────────
+  api:
+    build:
+      context: ./api
+      dockerfile: Dockerfile
+    container_name: rfihunter-api
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DB_HOST: db
+      DB_PORT: 3306
+      DB_NAME: rfihunter
+      DB_USER: rfihunter
+      DB_PASS: rfihunter_pass
+      API_PORT: 4000
+    ports:
+      - "4000:4000"
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:4000/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+
+  # ── React Dashboard ───────────────────────────────────────────────────
+  dashboard:
+    build:
+      context: ./dashboard
+      dockerfile: Dockerfile
+      args:
+        REACT_APP_API_URL: http://localhost:4000/api
+    container_name: rfihunter-dashboard
+    restart: unless-stopped
+    depends_on:
+      api:
+        condition: service_healthy
+    ports:
+      - "3000:80"
+
+volumes:
+  db_data:
