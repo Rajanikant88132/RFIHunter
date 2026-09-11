@@ -62,16 +62,20 @@ class TEDScraper(BaseScraper):
     BASE_URL     = "https://ted.europa.eu"
     POLITE_DELAY = 0.8
 
+    # Max pages to fetch per run — prevents pulling thousands of historical notices.
+    # 20 pages × 50 = 1000 most-recent Finnish notices, enough for any 6-hour window.
+    MAX_PAGES = 20
+
     def scrape(self) -> Iterator[dict]:
         """
-        TED v3 API: POST JSON body.
-        Correct query for Finland: buyer-country=FIN
-        (verified working — returns Finnish notices including CPV, title, deadline)
+        TED v3 API: POST JSON body, query buyer-country=FIN.
+        The API returns results newest-first by default; we cap at MAX_PAGES
+        to avoid pulling thousands of stale historical notices from 2016–2018.
         """
         page = 1
         page_size = 50
 
-        while True:
+        while page <= self.MAX_PAGES:
             body = {
                 "query":  "buyer-country=FIN",
                 "fields": _FIELDS,
